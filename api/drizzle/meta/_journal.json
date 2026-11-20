@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794911004988,
+      "tag": "0000_acoustic_warbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794975184991,
+      "tag": "0001_careless_corsair",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794981968113,
+      "tag": "0002_bizarre_weapon_omega",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795153676298,
+      "tag": "0003_clammy_albert_cleary",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795156021482,
+      "tag": "0004_misty_stranger",
+      "breakpoints": true
+    }
+  ]
+}

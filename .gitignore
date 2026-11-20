@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.expo/
+*.log
+
+# Claude Code 本机设置（不提交）
+.claude/settings.local.json

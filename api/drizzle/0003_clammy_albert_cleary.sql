@@ -1,0 +1,1 @@
+ALTER TABLE "ledger_members" ADD COLUMN "share_from" date;

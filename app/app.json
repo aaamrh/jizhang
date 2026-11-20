@@ -1,0 +1,88 @@
+{
+  "expo": {
+    "name": "账房",
+    "slug": "zhangfang",
+    "scheme": "zhangfang",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F4EBD9",
+    "ios": {
+      "bundleIdentifier": "com.zhangfang.app",
+      "supportsTablet": false,
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "开启应用锁后，用面容 ID 解锁账房，保护你的账目。"
+      },
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.zhangfang.app"
+        ]
+      }
+    },
+    "android": {
+      "package": "com.zhangfang.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#F4EBD9",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-font",
+      "expo-sharing",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "开启应用锁后，用面容 ID 解锁账房，保护你的账目。"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#B5322B"
+        }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "Spend",
+              "label": "账房 · 今日花销",
+              "description": "今日、本月已花，一点就能记一笔",
+              "minWidth": "180dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 3,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
+      ],
+      "@bacons/apple-targets",
+      "expo-secure-store",
+      "expo-apple-authentication",
+      [
+        "expo-wechat",
+        {
+          "enablePay": false
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraProguardRules": "-keep class com.tencent.mm.opensdk.** { *; }\n-keep class com.tencent.wxop.** { *; }\n-keep class com.tencent.mm.sdk.** { *; }"
+          }
+        }
+      ]
+    ]
+  }
+}

@@ -1,0 +1,54 @@
+# 一条命令启动后端 + 数据库：docker compose up -d --build
+# 密码等配置写在同目录的 .env（参考 .env.example）
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: zhangfang
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?请在 .env 里设置 DB_PASSWORD}
+      POSTGRES_DB: zhangfang
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432" # 只给本机用，不对外开放
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zhangfang"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://zhangfang:${DB_PASSWORD}@db:5432/zhangfang
+      JWT_SECRET: ${JWT_SECRET:?请在 .env 里设置 JWT_SECRET（至少 32 位随机字符）}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?请在 .env 里设置 ADMIN_PASSWORD}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
+      WECHAT_APP_ID: ${WECHAT_APP_ID:-}
+      WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:-}
+      APPLE_BUNDLE_ID: ${APPLE_BUNDLE_ID:-}
+      ENABLE_MOCK_PAY: ${ENABLE_MOCK_PAY:-false}
+      SMS_DEV_ECHO: ${SMS_DEV_ECHO:-false} # 测试环境回显短信验证码，正式环境必须 false
+      # 照片存储：local 存在下面的 files 卷里；上线换成 s3（阿里云 OSS / 腾讯云 COS）并填 S3_*
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      STORAGE_DIR: /data/files
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-auto}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
+    volumes:
+      - files:/data/files
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+  files:

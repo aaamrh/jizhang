@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>账房 · 后台</title>
+<style>
+  :root { --paper:#F4EBD9; --card:#FBF5E6; --ink:#2B2118; --muted:#7A6A58; --seal:#B5322B; --green:#3E5C56; --gold:#B8893B; --line:#D9CBB0; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.6 "Songti SC","Noto Serif SC",serif; }
+  header { display:flex; align-items:center; gap:12px; padding:14px 24px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .seal { width:32px; height:32px; background:var(--seal); color:#fff; display:grid; place-items:center; border-radius:4px; font-size:18px; }
+  header h1 { font-size:18px; margin:0; letter-spacing:2px; }
+  nav { display:flex; gap:4px; margin-left:16px; flex-wrap:wrap; }
+  nav button { border:none; background:none; padding:6px 12px; border-radius:4px; }
+  nav button.on { background:var(--ink); color:var(--paper); }
+  .sp { flex:1; }
+  main { max-width:1100px; margin:0 auto; padding:20px 24px 60px; }
+  h2 { font-size:16px; margin:28px 0 10px; letter-spacing:1px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:6px; padding:12px 14px; }
+  .card b { display:block; font-size:24px; font-weight:600; }
+  .card span { color:var(--muted); font-size:13px; }
+  button { font:inherit; cursor:pointer; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:4px; padding:4px 12px; }
+  button.on { background:var(--green); color:#fff; border-color:var(--green); }
+  button.primary { background:var(--seal); color:#fff; border-color:var(--seal); }
+  button.danger { color:var(--seal); }
+  button:disabled { opacity:.4; cursor:default; }
+  svg { width:100%; height:160px; background:var(--card); border:1px solid var(--line); border-radius:6px; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); }
+  th, td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--line); font-size:14px; white-space:nowrap; }
+  th { color:var(--muted); font-weight:normal; }
+  td button { margin-right:4px; padding:2px 8px; }
+  input, textarea, select { font:inherit; padding:5px 10px; border:1px solid var(--line); border-radius:4px; background:#fff; color:var(--ink); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:12px; }
+  .grid label { display:block; font-size:13px; color:var(--muted); margin:8px 0 2px; }
+  .grid input, .grid textarea { width:100%; }
+  .row { display:flex; gap:8px; align-items:center; margin:10px 0; flex-wrap:wrap; }
+  .muted { color:var(--muted); } .vip { color:var(--gold); } .bad { color:var(--seal); }
+  .scroll { overflow-x:auto; }
+  #login { max-width:320px; margin:18vh auto; text-align:center; }
+  #login input { width:100%; margin:12px 0; }
+  .err { color:var(--seal); min-height:1.6em; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<div id="login" hidden>
+  <div class="seal" style="margin:0 auto 8px;width:48px;height:48px;font-size:26px">账</div>
+  <h1 style="letter-spacing:4px">账房后台</h1>
+  <input id="pw" type="password" placeholder="管理员密码" autocomplete="current-password">
+  <button class="primary" id="loginBtn" style="width:100%">登录</button>
+  <p class="err" id="loginErr"></p>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <div class="seal">账</div><h1>账房 · 后台</h1>
+    <nav id="nav"></nav>
+    <div class="sp"></div><button id="logout">退出</button>
+  </header>
+  <main>
+    <section id="tab-overview">
+      <p class="muted">账目都在用户手机和同步数据里，后台看不到任何账目内容。</p>
+      <h2>用户与收入</h2><div class="cards" id="bizCards"></div>
+      <h2>安装与活跃</h2><div class="cards" id="devCards"></div>
+      <h2>近 30 天趋势</h2>
+      <div class="row" id="metricTabs"></div>
+      <svg id="chart" viewBox="0 0 600 160" preserveAspectRatio="none"></svg>
+      <h2>本月收入明细</h2><div class="scroll"><table id="revTable"></table></div>
+      <h2>版本分布</h2><div class="cards" id="versions"></div>
+    </section>
+
+    <section id="tab-users" hidden>
+      <div class="row">
+        <input id="q" placeholder="手机号或昵称" maxlength="20">
+        <button id="search">搜索</button><span class="muted" id="userTotal"></span>
+      </div>
+      <div class="scroll"><table id="userTable"></table></div>
+      <div class="row"><button id="uPrev">上一页</button><span class="muted" id="uPage"></span><button id="uNext">下一页</button></div>
+    </section>
+
+    <section id="tab-orders" hidden>
+      <div class="row">
+        <select id="status"><option value="">全部状态</option><option value="pending">待支付</option><option value="paid">已支付</option><option value="refunded">已退款</option><option value="closed">已关闭</option></select>
+        <span class="muted" id="orderTotal"></span>
+      </div>
+      <div class="scroll"><table id="orderTable"></table></div>
+      <div class="row"><button id="oPrev">上一页</button><span class="muted" id="oPage"></span><button id="oNext">下一页</button></div>
+    </section>
+
+    <section id="tab-products" hidden>
+      <p class="muted">价格单位是元。活动价在开始和结束时间之间生效，不填时间表示一直有效；清空活动价即取消活动。新人价只给注册 7 天内、从没付过费的用户。苹果端价格要在 App Store Connect 里另外设置成一致。</p>
+      <div class="grid" id="products"></div>
+    </section>
+
+    <section id="tab-errors" hidden>
+      <p class="muted">App 闪退、白屏时上报的出错信息（只有出错位置，不含账目），最近 200 条。</p>
+      <div class="scroll"><table id="errTable"></table></div>
+    </section>
+
+    <section id="tab-releases" hidden>
+      <p class="muted">App 启动时会检查这里。低于"最低支持版本"的必须更新；低于"最新版本"的会提示，可以忽略。</p>
+      <div class="grid" id="releases"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s)
+const PAGE = 20
+// 会员的对外名称：后台页面里只从这里取（与 api/src/utils/copy.ts 保持一致）
+const VIP_NAME = '大掌柜'
+let token = sessionStorage.getItem('zf_admin') || ''
+
+// 所有文本都用 textContent / value 写入，不拼 HTML
+function h(tag, props = {}, ...kids) {
+  const el = document.createElement(tag)
+  for (const [k, v] of Object.entries(props)) {
+    if (v == null) continue
+    if (k === 'class') el.className = v
+    else if (k === 'value' || k === 'checked') el[k] = v
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v)
+    else el.setAttribute(k, v)
+  }
+  for (const k of kids) if (k != null && k !== false) el.append(k)
+  return el
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch('/admin/api' + path, {
+    method: opts.method || 'GET',
+    headers: { ...(opts.body ? { 'content-type': 'application/json' } : {}), ...(token ? { authorization: 'Bearer ' + token } : {}) },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  })
+  if (res.status === 401 && path !== '/login') { logout(); throw new Error('登录已过期，请重新登录') }
+  if (res.status === 204) return null
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || '请求失败')
+  return data
+}
+
+const yuan = (c) => c == null ? '' : (c / 100).toFixed(2).replace(/\.00$/, '')
+const toCents = (s) => s.trim() === '' ? null : Math.round(parseFloat(s) * 100)
+const fmt = (iso) => iso ? new Date(iso).toLocaleString('zh-CN', { hour12: false }).replace(/:\d\d$/, '') : '—'
+const toLocalInput = (iso) => { if (!iso) return ''; const d = new Date(iso); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16) }
+const fromLocalInput = (v) => v ? new Date(v).toISOString() : null
+const card = (n, label) => h('div', { class: 'card' }, h('b', {}, String(n)), h('span', {}, label))
+async function act(fn, reload) { try { await fn(); await reload() } catch (e) { alert(e.message) } }
+
+// ── 登录与导航 ──
+function show(loggedIn) { $('#login').hidden = loggedIn; $('#app').hidden = !loggedIn }
+function logout() { token = ''; sessionStorage.removeItem('zf_admin'); show(false) }
+async function doLogin() {
+  $('#loginErr').textContent = ''
+  try {
+    token = (await api('/login', { method: 'POST', body: { password: $('#pw').value } })).token
+    sessionStorage.setItem('zf_admin', token); $('#pw').value = ''
+    show(true); openTab('overview')
+  } catch (e) { $('#loginErr').textContent = e.message }
+}
+
+const TABS = { overview: ['概览', loadOverview], users: ['用户', loadUsers], orders: ['订单', loadOrders], products: ['付费方案', loadProducts], releases: ['版本', loadReleases], errors: ['出错', loadErrors] }
+function openTab(name) {
+  for (const k of Object.keys(TABS)) $('#tab-' + k).hidden = k !== name
+  $('#nav').replaceChildren(...Object.entries(TABS).map(([k, [label]]) => h('button', { class: k === name ? 'on' : '', onclick: () => openTab(k) }, label)))
+  TABS[name][1]().catch((e) => token && alert(e.message))
+}
+
+// ── 概览 ──
+let series = [], metric = 'active'
+const METRICS = { active: '每日活跃', newDevices: '新增安装', newUsers: '新增用户' }
+function drawChart() {
+  const svg = $('#chart'); svg.replaceChildren()
+  const max = Math.max(1, ...series.map((d) => d[metric])), w = 600 / series.length
+  series.forEach((d, i) => {
+    const hgt = (d[metric] / max) * 130
+    const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+    r.setAttribute('x', i * w + 2); r.setAttribute('width', Math.max(1, w - 4)); r.setAttribute('y', 145 - hgt); r.setAttribute('height', hgt); r.setAttribute('fill', '#3E5C56')
+    const t = document.createElementNS('http://www.w3.org/2000/svg', 'title'); t.textContent = `${d.day}：${d[metric]}`; r.append(t); svg.append(r)
+  })
+  $('#metricTabs').replaceChildren(...Object.entries(METRICS).map(([k, label]) => h('button', { class: k === metric ? 'on' : '', onclick: () => { metric = k; drawChart() } }, label)))
+}
+async function loadOverview() {
+  const s = await api('/stats')
+  series = s.series
+  $('#bizCards').replaceChildren(
+    card(s.users.total, '注册用户'), card(s.users.vip, '有效' + VIP_NAME), card((s.users.conversion * 100).toFixed(1) + '%', '付费转化率'),
+    card(s.users.familyLedgers, '家庭账本'), card('¥' + yuan(s.revenue.todayCents), '今日收入'), card('¥' + yuan(s.revenue.monthCents), '本月收入'))
+  $('#devCards').replaceChildren(
+    card(s.devices.total, '累计安装'), card(s.devices.activeToday, '今日活跃'), card(s.devices.new7d, '近 7 日新增'), card(`${s.devices.ios} / ${s.devices.android}`, 'iOS / 安卓'))
+  const NAMES = { month: '月卡', year: '年卡', three_year: '3 年卡', year_auto: '连续包年' }
+  const CH = { wechat: '微信支付', alipay: '支付宝', apple: '苹果', mock: '模拟支付' }
+  $('#revTable').replaceChildren(h('tr', {}, h('th', {}, '方案'), h('th', {}, '渠道'), h('th', {}, '笔数'), h('th', {}, '金额')),
+    ...s.revenue.month.map((r) => h('tr', {}, h('td', {}, NAMES[r.productId] || r.productId), h('td', {}, CH[r.channel] || r.channel), h('td', {}, String(r.n)), h('td', {}, '¥' + yuan(r.cents)))))
+  if (!s.revenue.month.length) $('#revTable').append(h('tr', {}, h('td', { colspan: 4, class: 'muted' }, '本月还没有收入')))
+  $('#versions').replaceChildren(...s.devices.versions.map((x) => card(x.count, 'v' + x.version)))
+  if (!s.devices.versions.length) $('#versions').append(h('span', { class: 'muted' }, '还没有数据'))
+  drawChart()
+}
+
+// ── 用户 ──
+let uPage = 1
+const PROVIDERS = { wechat: '微信', phone: '手机', apple: 'Apple' }
+async function loadUsers() {
+  const r = await api(`/users?q=${encodeURIComponent($('#q').value.trim())}&page=${uPage}&pageSize=${PAGE}`)
+  $('#userTotal').textContent = `共 ${r.total} 个`
+  $('#uPage').textContent = `第 ${uPage} / ${Math.max(1, Math.ceil(r.total / PAGE))} 页`
+  $('#uPrev').disabled = uPage <= 1; $('#uNext').disabled = uPage * PAGE >= r.total
+  const grant = (u) => { const v = prompt(`给「${u.nickname}」开通/续期多少天？`, '30'); if (v === null) return; const days = Number(v); if (!Number.isInteger(days) || days < 1 || days > 3660) return alert('请输入 1–3660 的整数'); act(() => api(`/users/${u.id}/vip`, { method: 'POST', body: { days } }), loadUsers) }
+  $('#userTable').replaceChildren(
+    h('tr', {}, ...['昵称', '手机号', '登录方式', VIP_NAME + '到期', '注册', '最近登录', '状态', '操作'].map((x) => h('th', {}, x))),
+    ...r.items.map((u) => h('tr', {},
+      h('td', {}, u.nickname), h('td', {}, u.phone || '—'), h('td', {}, u.providers.map((p) => PROVIDERS[p]).join('、')),
+      h('td', { class: u.isVip ? 'vip' : 'muted' }, u.vipUntil ? fmt(u.vipUntil) + (u.isVip ? '' : '（已过期）') : '—'),
+      h('td', {}, fmt(u.createdAt)), h('td', {}, fmt(u.lastLoginAt)),
+      h('td', { class: u.frozen ? 'bad' : 'muted' }, u.frozen ? '已冻结' : '正常'),
+      h('td', {},
+        h('button', { onclick: () => grant(u) }, '开通/续期'),
+        u.isVip && h('button', { onclick: () => confirm(`撤销「${u.nickname}」的${VIP_NAME}？`) && act(() => api(`/users/${u.id}/vip`, { method: 'DELETE' }), loadUsers) }, '撤销' + VIP_NAME),
+        h('button', { class: 'danger', onclick: () => confirm(u.frozen ? `解冻「${u.nickname}」？` : `冻结「${u.nickname}」？冻结后不能登录。`) && act(() => api(`/users/${u.id}/freeze`, { method: u.frozen ? 'DELETE' : 'POST' }), loadUsers) }, u.frozen ? '解冻' : '冻结'),
+      ))))
+  if (!r.items.length) $('#userTable').append(h('tr', {}, h('td', { colspan: 8, class: 'muted' }, '没有找到用户')))
+}
+
+// ── 订单 ──
+let oPage = 1
+const STATUS = { pending: '待支付', paid: '已支付', refunded: '已退款', closed: '已关闭' }
+async function loadOrders() {
+  const st = $('#status').value
+  const r = await api(`/orders?page=${oPage}&pageSize=${PAGE}${st ? '&status=' + st : ''}`)
+  $('#orderTotal').textContent = `共 ${r.total} 笔`
+  $('#oPage').textContent = `第 ${oPage} / ${Math.max(1, Math.ceil(r.total / PAGE))} 页`
+  $('#oPrev').disabled = oPage <= 1; $('#oNext').disabled = oPage * PAGE >= r.total
+  const withNote = (label, path) => { const note = prompt(`${label}原因（必填，会记在订单上）`); if (!note) return; act(() => api(path, { method: 'POST', body: { note } }), loadOrders) }
+  $('#orderTable').replaceChildren(
+    h('tr', {}, ...['下单时间', '方案', '渠道', '金额', '状态', '用户', '备注', '操作'].map((x) => h('th', {}, x))),
+    ...r.items.map((o) => h('tr', {},
+      h('td', {}, fmt(o.createdAt)), h('td', {}, o.productId), h('td', {}, o.channel), h('td', {}, '¥' + yuan(o.amountCents)),
+      h('td', { class: o.status === 'paid' ? 'vip' : 'muted' }, STATUS[o.status] || o.status),
+      h('td', { class: 'muted', title: o.userId || '' }, o.userId ? o.userId.slice(0, 8) : '已注销'),
+      h('td', { class: 'muted' }, o.note || ''),
+      h('td', {},
+        (o.status === 'pending' || o.status === 'closed') && h('button', { onclick: () => withNote('补单', `/orders/${o.id}/mark-paid`) }, '补单'),
+        o.status === 'paid' && h('button', { class: 'danger', onclick: () => withNote('退款', `/orders/${o.id}/refund`) }, '退款'),
+      ))))
+  if (!r.items.length) $('#orderTable').append(h('tr', {}, h('td', { colspan: 8, class: 'muted' }, '没有订单')))
+}
+
+// ── 付费方案 ──
+async function loadProducts() {
+  const list = await api('/products')
+  $('#products').replaceChildren(...list.map((p) => {
+    const f = {
+      name: h('input', { value: p.name }), days: h('input', { value: p.days, inputmode: 'numeric' }),
+      price: h('input', { value: yuan(p.priceCents) }), promo: h('input', { value: yuan(p.promoPriceCents), placeholder: '不填即无活动' }),
+      start: h('input', { type: 'datetime-local', value: toLocalInput(p.promoStart) }), end: h('input', { type: 'datetime-local', value: toLocalInput(p.promoEnd) }),
+      badge: h('input', { value: p.badge || '', placeholder: '如：双 11 特惠' }), newUser: h('input', { value: yuan(p.newUserPriceCents), placeholder: '不填即无新人价' }),
+      apple: h('input', { value: p.appleProductId || '' }), active: h('input', { type: 'checkbox', checked: p.active }), sort: h('input', { value: p.sort, inputmode: 'numeric' }),
+    }
+    const msg = h('span', { class: 'muted' })
+    const save = async () => {
+      try {
+        await api('/products/' + p.id, { method: 'PATCH', body: {
+          name: f.name.value.trim(), days: Number(f.days.value), priceCents: toCents(f.price.value), promoPriceCents: toCents(f.promo.value),
+          promoStart: fromLocalInput(f.start.value), promoEnd: fromLocalInput(f.end.value), badge: f.badge.value.trim() || null,
+          newUserPriceCents: toCents(f.newUser.value), appleProductId: f.apple.value.trim() || null, active: f.active.checked, sort: Number(f.sort.value),
+        } })
+        msg.textContent = '已保存'
+      } catch (e) { msg.textContent = e.message }
+    }
+    const field = (label, el) => [h('label', {}, label), el]
+    return h('div', { class: 'card' },
+      h('b', { style: 'font-size:18px' }, `${p.name}（${p.id}${p.platform !== 'all' ? '，仅 ' + p.platform : ''}）`),
+      ...field('名称', f.name), ...field('天数', f.days), ...field('原价（元）', f.price), ...field('活动价（元）', f.promo),
+      ...field('活动开始', f.start), ...field('活动结束', f.end), ...field('角标', f.badge), ...field('新人价（元）', f.newUser),
+      ...field('苹果商品 ID', f.apple), ...field('排序（小的在前）', f.sort),
+      h('label', {}, f.active, ' 上架'),
+      h('div', { class: 'row' }, h('button', { class: 'primary', onclick: save }, '保存'), msg))
+  }))
+}
+
+// ── 版本 ──
+async function loadReleases() {
+  const by = Object.fromEntries((await api('/releases')).map((r) => [r.platform, r]))
+  $('#releases').replaceChildren(...['ios', 'android'].map((platform) => {
+    const r = by[platform]
+    const f = {
+      latest: h('input', { value: r?.latestVersion || '', placeholder: '如 1.2.0' }), min: h('input', { value: r?.minVersion || '', placeholder: '如 1.0.0' }),
+      url: h('input', { value: r?.downloadUrl || '', placeholder: 'https://…（应用商店或下载页）' }), notes: h('textarea', { value: r?.notes || '', placeholder: '更新说明，会显示在弹窗里' }),
+    }
+    const msg = h('span', { class: 'muted' }, r ? '上次保存 ' + fmt(r.updatedAt) : '尚未配置')
+    const save = async () => {
+      try {
+        await api('/releases/' + platform, { method: 'PUT', body: { latestVersion: f.latest.value.trim(), minVersion: f.min.value.trim(), notes: f.notes.value, downloadUrl: f.url.value.trim() || null } })
+        msg.textContent = '已保存'
+      } catch (e) { msg.textContent = e.message }
+    }
+    return h('div', { class: 'card' }, h('b', { style: 'font-size:18px' }, platform === 'ios' ? 'iOS' : '安卓'),
+      h('label', {}, '最新版本'), f.latest, h('label', {}, '最低支持版本'), f.min, h('label', {}, '下载地址'), f.url, h('label', {}, '更新说明'), f.notes,
+      h('div', { class: 'row' }, h('button', { class: 'primary', onclick: save }, '保存'), msg))
+  }))
+}
+
+// ── 出错 ──
+async function loadErrors() {
+  const rows = await api('/errors')
+  $('#errTable').replaceChildren(
+    h('tr', {}, ...['时间', '版本', '系统', '闪退', '出错信息'].map((t) => h('th', {}, t))),
+    ...rows.map((e) => h('tr', {},
+      h('td', {}, fmt(e.occurredAt)), h('td', {}, e.appVersion), h('td', {}, e.platform === 'ios' ? 'iOS' : '安卓'), h('td', {}, e.fatal ? '是' : '否'),
+      h('td', {}, h('details', {}, h('summary', {}, e.message), h('pre', { style: 'white-space:pre-wrap;font-size:12px' }, e.stack))))),
+  )
+}
+
+$('#loginBtn').onclick = doLogin
+$('#pw').onkeydown = (e) => e.key === 'Enter' && doLogin()
+$('#logout').onclick = logout
+$('#search').onclick = () => { uPage = 1; loadUsers().catch((e) => alert(e.message)) }
+$('#q').onkeydown = (e) => e.key === 'Enter' && $('#search').click()
+$('#uPrev').onclick = () => { uPage--; loadUsers() }
+$('#uNext').onclick = () => { uPage++; loadUsers() }
+$('#status').onchange = () => { oPage = 1; loadOrders() }
+$('#oPrev').onclick = () => { oPage--; loadOrders() }
+$('#oNext').onclick = () => { oPage++; loadOrders() }
+
+show(!!token); if (token) openTab('overview')
+</script>
+</body>
+</html>

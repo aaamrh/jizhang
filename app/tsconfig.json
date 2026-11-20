@@ -1,0 +1,8 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true
+  },
+  // e2e 测试引用 ../api 的后端代码（Node 环境、另一套 tsconfig），只由 vitest 运行，不参与 App 的类型检查
+  "exclude": ["node_modules", "e2e"]
+}
