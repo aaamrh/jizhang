@@ -33,8 +33,8 @@ interface Props {
   trigger?: (open: () => void) => ReactNode
   /** 不能选未来的日期 */
   noFuture?: boolean
-  /** 日历上面的内容（见 DatePickerSheet） */
-  header?: ReactNode
+  /** 日历上面的内容（见 DatePickerSheet）；传函数时拿到面板里还没确定的那天 */
+  header?: ReactNode | ((draft: string) => ReactNode)
 }
 
 /**

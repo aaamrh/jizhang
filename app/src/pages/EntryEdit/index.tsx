@@ -320,29 +320,32 @@ export default function EntryEditPage({ navigation, route }: StackProps<'EntryEd
       ],
     })
 
-  // 日期面板最上面一排“重复”：先点重复（面板不关），再点日子，日期和重复一起定
+  // 日期面板最上面一排“重复”：先点重复，再点日子，按“确定”日期和重复一起定。d 是面板里点了还没确定的那天，说明跟着它变
   const canRepeat = !id && (type === 'expense' || type === 'income')
-  // 这一笔算这一期（这周、这个月……）的，从下一期记起；日期在以前的，保存后补记到今天
-  const doneTo = repeat ? periodEnd(repeat.freq, date) : date
-  const later = rule ? occurrences(rule, addDays(doneTo, 1), today()).length : 0
-  const next = rule && !later ? nextDate(rule, doneTo > today() ? doneTo : today()) : null
-  const repeatHeader = (
+  const repeatHeader = (d: string) => {
+    const r = repeat ? { ...repeat, startDate: d, endDate: null } : null
+    // 这一笔算这一期（这周、这个月……）的，从下一期记起；日期在以前的，保存后补记到今天
+    const doneTo = repeat ? periodEnd(repeat.freq, d) : d
+    const later = r ? occurrences(r, addDays(doneTo, 1), today()).length : 0
+    const next = r && !later ? nextDate(r, doneTo > today() ? doneTo : today()) : null
+    return (
     <View style={{ gap: space.xs }}>
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.sm }}>
         <Txt v="small" muted style={{ lineHeight: size.chip + space.xxs }}>
           重复
         </Txt>
         <View style={{ flex: 1 }}>
-          <RepeatPicker allowNone value={repeat} onChange={setRepeat} date={date} />
+          <RepeatPicker allowNone value={repeat} onChange={setRepeat} date={d} />
         </View>
       </View>
-      {rule ? (
+      {r ? (
         <Txt v="caption" muted>
-          {freqLabel(rule)}自动记一笔，这一笔算第一次，{later ? `保存后补记到今天，共 ${later} 笔` : next ? `下次 ${dayLabel(next)}` : ''}。要停或改去“掌柜 → 定时记账”。
+          {freqLabel(r)}自动记一笔，这一笔算第一次，{later ? `保存后补记到今天，共 ${later} 笔` : next ? `下次 ${dayLabel(next)}` : ''}。要停或改去“掌柜 → 定时记账”。
         </Txt>
       ) : null}
     </View>
-  )
+    )
+  }
 
   const panelOpen = type === 'transfer' || !!categoryId
   const result = hasOperator(expr) ? evaluate(expr) : null
@@ -435,7 +438,7 @@ export default function EntryEditPage({ navigation, route }: StackProps<'EntryEd
                   value={walletId}
                   options={walletOptions(wallets)}
                   onChange={setWalletId}
-                  trigger={(open, cur) => <SelectChip glyph="pouch" value={cur?.label ?? '钱袋'} onPress={open} />}
+                  trigger={(open, cur) => <SelectChip value={cur?.label ?? '钱袋'} onPress={open} />}
                 />
                 {type === 'expense' ? <CheckChip label="家当" a11yLabel="计入家当" checked={assetOn} onChange={setAssetOn} /> : null}
                 {type === 'expense' || type === 'income' ? (

@@ -78,18 +78,11 @@ export default function RecurringFormPage({ navigation, route }: StackProps<'Rec
   return (
     <Screen footer={<Button title="保存" variant="primary" onPress={save} />}>
       <Segmented options={TYPES} value={type} onChange={(t) => (setType(t), setCategoryId(null))} />
-      <Section plain>
-        <TextField label="金额" value={amount} onChangeText={setAmount} placeholder="0.00" prefix="¥" keyboardType="decimal-pad" display />
-        <TextField label="备注（选填）" value={note} onChangeText={setNote} placeholder="比如：房租、工资、视频会员" maxLength={50} />
-      </Section>
-      <Section title="分类" plain>
-        <CategoryGrid items={cats} value={categoryId} onChange={setCategoryId} />
-      </Section>
-      <Section title="多久一次" plain>
+      {/* 最要紧的是“什么时候记”，放最上面（用户：怎么把最重要的日期放在了最下面） */}
+      <Section title="什么时候记" plain>
         <RepeatPicker value={repeat} onChange={(v) => v && setRepeat(v)} date={startDate} />
       </Section>
       <Section list>
-        <Picker label="钱袋" value={wallet} options={wallets.map((w) => ({ value: w.id, label: w.name }))} onChange={setWalletId} />
         <DateField label="从哪天开始" value={startDate} onChange={setStartDate} display={dayLabel} />
         <ListRow title="设个结束日期" subtitle="比如房租合同到期那天" switchValue={hasEnd} onSwitch={setHasEnd} />
         {hasEnd ? <DateField label="到哪天结束" value={endDate} onChange={setEndDate} display={dayLabel} /> : null}
@@ -100,6 +93,16 @@ export default function RecurringFormPage({ navigation, route }: StackProps<'Rec
         {backfill > 0 ? (backfill === 1 && occurrences(rule, today(), today()).length ? '保存后今天这笔马上记上。' : `保存后会把到今天的 ${backfill} 笔一起记上。`) : next ? `下次 ${dayLabel(next)}。` : ''}
         自动记的账不算进连续记账天数。
       </Txt>
+      <Section plain>
+        <TextField label="金额" value={amount} onChangeText={setAmount} placeholder="0.00" prefix="¥" keyboardType="decimal-pad" display />
+        <TextField label="备注（选填）" value={note} onChangeText={setNote} placeholder="比如：房租、工资、视频会员" maxLength={50} />
+      </Section>
+      <Section title="分类" plain>
+        <CategoryGrid items={cats} value={categoryId} onChange={setCategoryId} />
+      </Section>
+      <Section list>
+        <Picker label="钱袋" value={wallet} options={wallets.map((w) => ({ value: w.id, label: w.name }))} onChange={setWalletId} />
+      </Section>
       {id ? <Button title="删除这条定时记账" variant="danger" onPress={remove} /> : null}
     </Screen>
   )

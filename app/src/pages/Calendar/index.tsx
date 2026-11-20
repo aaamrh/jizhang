@@ -5,6 +5,7 @@ import { EmptyState, PeriodSwitcher } from '../../components/Misc'
 import { Screen } from '../../components/Screen'
 import { Section } from '../../components/Section'
 import { TxnRow } from '../../components/TxnItem'
+import { PickMark } from '../../components/PickMark'
 import { Txt } from '../../components/Txt'
 import { useMonthView } from '../../hooks/data'
 import { colors, expenseColor, GUTTER, incomeColor, radius, space } from '../../theme'
@@ -71,13 +72,15 @@ export default function CalendarPage({ navigation }: StackProps<'Calendar'>) {
                 accessibilityLabel={`${dayLabel(d)}${g?.expenseCents ? `，支出 ${formatPlain(g.expenseCents)}` : ''}`}
                 disabled={future}
                 onPress={() => setPicked(d)}
-                style={{ width: cell - space.xxs, height: cell, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm, backgroundColor: on ? colors.active : 'transparent' }}
+                style={{ width: cell - space.xxs, height: cell, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm }}
               >
-                <Txt v="body" color={on ? colors.white : future ? colors.ink3 : colors.ink} medium={d === now}>
+                {/* 选中的那天是朱文框，和日期选择一样 */}
+                {on ? <PickMark w={cell - space.xxs} h={cell} /> : null}
+                <Txt v="body" color={future ? colors.ink3 : colors.ink} medium={on || d === now}>
                   {Number(d.slice(8))}
                 </Txt>
                 {/* 没账的日子也占着这一行，格子高度不跳 */}
-                <Txt v="caption" numberOfLines={1} color={on ? colors.white : g?.expenseCents ? expenseColor : incomeColor} style={{ opacity: g && (g.expenseCents || g.incomeCents) ? 1 : 0 }}>
+                <Txt v="caption" numberOfLines={1} color={g?.expenseCents ? expenseColor : incomeColor} style={{ opacity: g && (g.expenseCents || g.incomeCents) ? 1 : 0 }}>
                   {g?.expenseCents ? formatPlain(g.expenseCents) : g?.incomeCents ? `+${formatPlain(g.incomeCents)}` : '0'}
                 </Txt>
               </Pressable>

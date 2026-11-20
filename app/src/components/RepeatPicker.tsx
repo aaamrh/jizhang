@@ -1,8 +1,9 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Pressable, ScrollView, View, type ScrollViewInstance } from 'react-native'
 import { colors, radius, size, space } from '../theme'
 import { anchorOf, type Freq, type Repeat } from '../utils/recurring'
 import { Segmented } from './Chip'
+import { PickMark } from './PickMark'
 import { Txt } from './Txt'
 
 const FREQ_LABEL: Record<Freq, string> = { day: '每天', week: '每周', month: '每月', year: '每年' }
@@ -11,14 +12,16 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i + 1)
 // 每年：这个月最多几号（2 月按 29，平年到时记 28 日）
 const maxDay = (month: number) => [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1]!
 
-/** 一个圆：和日历里的日子一个样子，选中墨底 */
+/** 一个日子：和日历里的日子一个样子，选中的是朱文框 */
 function Dot({ label, a11y, on, onPress, wide }: { label: string; a11y: string; on: boolean; onPress: () => void; wide?: boolean }) {
+  const [box, setBox] = useState({ w: 0, h: 0 })
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={a11y}
       accessibilityState={{ selected: on }}
       onPress={onPress}
+      onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
       style={({ pressed }) => ({
         minWidth: size.circle,
         height: size.circle,
@@ -27,11 +30,11 @@ function Dot({ label, a11y, on, onPress, wide }: { label: string; a11y: string; 
         borderRadius: radius.pill,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: on ? colors.active : colors.fill,
-        opacity: pressed ? 0.7 : 1,
+        backgroundColor: pressed && !on ? colors.fill : 'transparent',
       })}
     >
-      <Txt v="body" color={on ? colors.white : colors.ink}>
+      {on ? <PickMark w={box.w} h={box.h} /> : null}
+      <Txt v="body" color={colors.ink} medium={on}>
         {label}
       </Txt>
     </Pressable>

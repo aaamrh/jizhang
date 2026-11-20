@@ -163,6 +163,7 @@ export const size = {
   bookSwatch: 32, // 选纸色
   bookHero: 84, // 账本页头、新建时的预览（宽 ≥ 56 才写书名）
   bookInvite: 40, // 请帖上
+  todayDot: 4, // 日历里“今天”数字下面那一粒墨点
   flame: 18, // 首页“连续记账”前的小火苗
   flameMoment: 72, // 关口庆祝卡片上的大火苗
   perkArt: 150, // 开通提醒抽屉里每项权益的示意图高度
