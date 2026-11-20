@@ -274,7 +274,7 @@ export default function EntryEditPage({ navigation, route }: StackProps<'EntryEd
     if (!ok) return
     if (newPhoto !== undefined && savedId) saveTxnPhoto(savedId, newPhoto, txn?.photo ?? null)
     // 选了重复：这一笔算第一次，以后到日子自动记（日期在以前的，补记到今天）
-    const repeatMsg = !id && rule && savedId && attempt(() => recurringActions.startFromTxn(savedId!, repeat!)) ? `以后${freqLabel(rule)}自动记这一笔` : null
+    const repeatMsg = !id && rule && savedId && attempt(() => recurringActions.startFromTxn(savedId!, repeat!)) ? `以后${freqLabel(rule)}自动记这一笔，在“掌柜 → 定时记账”里能改` : null
     // 勾了「存为常记」：同名的更新，没有就新建
     if (asTemplate && (type === 'expense' || type === 'income') && categoryId) {
       attempt(() =>
@@ -338,11 +338,12 @@ export default function EntryEditPage({ navigation, route }: StackProps<'EntryEd
           <RepeatPicker allowNone value={repeat} onChange={setRepeat} date={d} />
         </View>
       </View>
-      {r ? (
-        <Txt v="caption" muted>
-          {freqLabel(r)}自动记一笔，这一笔算第一次，{later ? `保存后补记到今天，共 ${later} 笔` : next ? `下次 ${dayLabel(next)}` : ''}。要停或改去“掌柜 → 定时记账”。
-        </Txt>
-      ) : null}
+      {/* 说明固定两行高，切换重复时下面的日历不跳 */}
+      <Txt v="caption" muted numberOfLines={2} style={{ minHeight: typo.caption.lineHeight * 2 }}>
+        {r
+          ? `${freqLabel(r)}自动记，这一笔算第一次；${later ? `保存后补记到今天，共 ${later} 笔` : next ? `下次 ${dayLabel(next)}` : ''}。`
+          : '选了重复，以后到日子自动记这一笔，不用再手动记。'}
+      </Txt>
     </View>
     )
   }

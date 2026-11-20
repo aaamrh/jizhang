@@ -24,16 +24,20 @@ export type PickKind = Level
 const WEEK = ['一', '二', '三', '四', '五', '六', '日']
 const YEARS_PER_PAGE = 12
 const SWIPE = 50 // 滑过这么远（或甩得够快）就翻页
+const GRID_CELLS = 42 // 每个月都按 6 行画（不够的补空格），左右滑换月时高度不跳
 
-/** 选中的那天是朱文框（用户从五种里选的），今天是数字下面一粒墨点 */
-function Cell({ label, on, today: isToday, disabled, onPress, width }: { label: string; on?: boolean; today?: boolean; disabled?: boolean; onPress: () => void; width: `${number}%` }) {
+/**
+ * 选中的那天是朱文框（用户从五种里选的）。今天不写数字，直接写“今天”（月份、年份写“本月”“今年”）：
+ * 原来是一粒墨点，用户说不明显，点成了昨天都看不出来
+ */
+function Cell({ label, on, today: isToday, todayText, disabled, onPress, width }: { label: string; on?: boolean; today?: boolean; todayText: string; disabled?: boolean; onPress: () => void; width: `${number}%` }) {
   const [box, setBox] = useState({ w: 0, h: 0 })
   return (
     <View style={{ width, alignItems: 'center', paddingVertical: space.xxs }}>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ selected: on, disabled }}
-        accessibilityLabel={`${label}${isToday ? '，今天' : ''}`}
+        accessibilityLabel={`${label}${isToday ? `，${todayText}` : ''}`}
         disabled={disabled}
         onPress={onPress}
         onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
@@ -49,12 +53,16 @@ function Cell({ label, on, today: isToday, disabled, onPress, width }: { label: 
         })}
       >
         {on ? <PickMark w={box.w} h={box.h} /> : null}
-        <Txt v="body" color={colors.ink} medium={on}>
-          {label}
-        </Txt>
-        {isToday && !on ? (
-          <View style={{ position: 'absolute', bottom: space.xxs, width: size.todayDot, height: size.todayDot, borderRadius: size.todayDot / 2, backgroundColor: colors.ink }} />
-        ) : null}
+        {isToday ? (
+          // 今天用朱红字（用户要的），和墨色的日子一眼分开
+          <Txt v="small" color={colors.seal} medium>
+            {todayText}
+          </Txt>
+        ) : (
+          <Txt v="body" color={colors.ink} medium={on}>
+            {label}
+          </Txt>
+        )}
       </Pressable>
     </View>
   )
@@ -176,10 +184,11 @@ export function DatePickerSheet({ visible, onClose, kind, value, onChange, noFut
                     ))}
                   </View>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                    {monthGrid(month).map((d, i) =>
+                    {[...monthGrid(month), ...Array<null>(GRID_CELLS).fill(null)].slice(0, GRID_CELLS).map((d, i) =>
                       d ? (
                         <Cell
                           key={d}
+                          todayText="今天"
                           width={`${100 / 7}%`}
                           label={String(Number(d.slice(8)))}
                           on={d === chosen}
@@ -188,7 +197,7 @@ export function DatePickerSheet({ visible, onClose, kind, value, onChange, noFut
                           onPress={() => (kind === 'day' ? setDraft(d) : pick(d))}
                         />
                       ) : (
-                        <View key={`x${i}`} style={{ width: `${100 / 7}%` }} />
+                        <View key={`x${i}`} style={{ width: `${100 / 7}%`, height: size.circle + space.xxs * 2 }} />
                       ),
                     )}
                   </View>
@@ -201,6 +210,7 @@ export function DatePickerSheet({ visible, onClose, kind, value, onChange, noFut
                     return (
                       <Cell
                         key={m}
+                        todayText="本月"
                         width="25%"
                         label={`${i + 1}月`}
                         on={sel}
@@ -218,6 +228,7 @@ export function DatePickerSheet({ visible, onClose, kind, value, onChange, noFut
                     return (
                       <Cell
                         key={y}
+                        todayText="今年"
                         width="25%"
                         label={String(y)}
                         on={Number(chosen.slice(0, 4)) === y}
