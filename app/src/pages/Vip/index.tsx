@@ -69,7 +69,7 @@ export default function VipPage({ navigation, route }: StackProps<'Vip'>) {
         ))}
       </Section>
       <Txt v="caption" muted>
-        以后新增的权益，已开通的{VIP_NAME}自动享有。记账、常记、家当、复盘、预算这些功能永远免费，没有广告。
+        以后新增的权益，已开通的{VIP_NAME}自动享有。记账、常记、家当、细算、预算这些功能永远免费，没有广告。
       </Txt>
 
       {error ? <Txt v="small" muted>{error}</Txt> : null}

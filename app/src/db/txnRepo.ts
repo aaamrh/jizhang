@@ -236,9 +236,10 @@ export function setReview(db: DB, id: string, review: Review | null) {
   db.update(t).set({ review, ...touched() }).where(eq(t.id, id)).run()
 }
 
-const REVIEW_SIZE = 8
-
-/** 本月弹性 + 享受两档里金额最大的 8 笔支出（复盘只看这几笔） */
+/**
+ * 这个月弹性 + 享受两档的每一笔支出（用户：每笔弹性的都要看，不能只看最大的 8 笔）。
+ * 新的在前：每晚提醒看的是当天刚花的，打开就是它们
+ */
 function reviewPool(db: DB, ledgerId: string, month: string): TxnView[] {
   const { start, end } = monthRange(month)
   return viewQuery(db)
@@ -251,21 +252,20 @@ function reviewPool(db: DB, ledgerId: string, month: string): TxnView[] {
         inArray(categories.tier, ['flex', 'want']),
       ),
     )
-    .orderBy(desc(t.amountCents), asc(t.createdAt))
-    .limit(REVIEW_SIZE)
+    .orderBy(desc(t.date), desc(t.amountCents), asc(t.createdAt))
     .all()
     .map(toTxnView)
 }
 
 /**
- * 复盘：这 8 笔里还没标记的。只在这 8 笔里挑，标记完就结束，不会无限往后补。
+ * 复盘：这个月弹性、享受里还没标记的每一笔。
  * "下次再说"直接离开页面，不写数据库；已经标记的保留。
  */
 export function reviewCandidates(db: DB, ledgerId: string, month: string): TxnView[] {
   return reviewPool(db, ledgerId, month).filter((x) => x.review === null)
 }
 
-/** 这 8 笔里已经标记过的（必要 / 非必要），复盘页列出来，可以改 */
+/** 这个月已经标记过的（必要 / 非必要），复盘页列出来，可以改 */
 export function reviewedList(db: DB, ledgerId: string, month: string): TxnView[] {
   return reviewPool(db, ledgerId, month).filter((x) => x.review !== null)
 }

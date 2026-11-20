@@ -172,7 +172,7 @@ export default function StatsPage({ navigation, route }: TabProps<'Stats'>) {
             <Section title="钱花得必不必要">
               <NecessityBar parts={s.necessity} onPick={setFilter} />
               <Txt v="caption" muted>
-                复盘标记过的按标记算；没标记的，必需类算必要，享受类算非必要，弹性类待定{s.reviewed > 0 ? `。已复盘 ${s.reviewed} 笔` : ''}
+                细算过的按标记算；没标记的，必需类算必要，享受类算非必要，弹性类待定{s.reviewed > 0 ? `。已细算 ${s.reviewed} 笔` : ''}
               </Txt>
             </Section>
   
@@ -249,7 +249,7 @@ export default function StatsPage({ navigation, route }: TabProps<'Stats'>) {
   
         <Section list title="回顾">
           <ListRow glyph="thread-book" title="年账" subtitle="一整年的收支、家当、记账天数" onPress={() => navigation.navigate('YearReport', {})} />
-          <ListRow glyph="seal" title="复盘" subtitle={`回头看看${month.slice(5, 7).replace(/^0/, '')}月的花销：必要还是非必要`} onPress={() => navigation.navigate('Review', { month })} />
+          <ListRow glyph="seal" title="细算" subtitle={`${month.slice(5, 7).replace(/^0/, '')}月的花销，一笔笔看看值不值`} onPress={() => navigation.navigate('Review', { month })} />
         </Section>
         </>
       )}

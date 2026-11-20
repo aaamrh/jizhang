@@ -61,7 +61,7 @@ export default function YearReportPage({ route }: StackProps<'YearReport'>) {
               <NecessityBar parts={summary.necessity} onPick={(n) => open(NECESSITY_LABEL[n], null, n)} />
               {summary.reviewed > 0 ? (
                 <Txt v="small" muted>
-                  这一年复盘过 {summary.reviewed} 笔
+                  这一年细算过 {summary.reviewed} 笔
                 </Txt>
               ) : null}
             </Section>

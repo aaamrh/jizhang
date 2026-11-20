@@ -172,7 +172,7 @@ export function VipSheet() {
               if (navigationRef.isReady()) navigationRef.navigate('Legal', { kind: 'terms' })
             }}
           >
-            开通即表示同意《用户协议》中的会员条款 · 记账、预算、复盘这些永远免费
+            开通即表示同意《用户协议》中的会员条款 · 记账、预算、细算这些永远免费
           </Txt>
         </View>
       </View>

@@ -1,9 +1,9 @@
 import * as Notifications from 'expo-notifications'
 import { useEffect } from 'react'
 import { Linking } from 'react-native'
-import { WEEKLY_SCREEN } from '../hooks/notifications'
+import { REVIEW_SCREEN, WEEKLY_SCREEN } from '../hooks/notifications'
 import { useSettings } from '../store/settingsStore'
-import { today } from '../utils/dates'
+import { monthOf, today } from '../utils/dates'
 import { navigationRef, whenReady } from './ref'
 
 /** 小组件的“记一笔”：zhangfang://add */
@@ -23,8 +23,10 @@ function openUrl(url: string | null | undefined) {
 }
 
 function openNotification(r: Notifications.NotificationResponse | null) {
-  if (r?.notification.request.content.data?.screen !== WEEKLY_SCREEN) return
+  const screen = r?.notification.request.content.data?.screen
+  if (screen !== WEEKLY_SCREEN && screen !== REVIEW_SCREEN) return
   Notifications.clearLastNotificationResponse()
+  if (screen === REVIEW_SCREEN) return whenReady(() => navigationRef.navigate('Review', { month: monthOf(today()) }))
   whenReady(() => navigationRef.navigate('Tabs', { screen: 'Stats', params: { week: today() } }))
 }
 

@@ -43,7 +43,7 @@ const TYPES: { value: TxnType; label: string }[] = [
 ]
 
 const REVIEWS: { value: Review | 'none'; label: string }[] = [
-  { value: 'none', label: '未复盘' },
+  { value: 'none', label: '未细算' },
   { value: 'necessary', label: '必要' },
   { value: 'unnecessary', label: '非必要' },
 ]
@@ -391,7 +391,7 @@ export default function EntryEditPage({ navigation, route }: StackProps<'EntryEd
           </>
         )}
         {reviewable ? (
-          <Section title="复盘：回头看，这笔是必要的吗？">
+          <Section title="细算：这笔是必要的吗？">
             <Segmented
               options={REVIEWS}
               value={txn?.review ?? 'none'}

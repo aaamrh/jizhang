@@ -8,7 +8,7 @@ type Named = { id: string; name: string }
 const TYPE_LABEL: Record<string, string> = { expense: '支出', income: '收入', transfer: '转账', refund: '退款' }
 const REVIEW_LABEL: Record<string, string> = { necessary: '必要', unnecessary: '非必要' }
 
-export const EXCEL_HEADER = ['日期', '类型', '分类', '金额（元）', '钱袋', '转入钱袋', '备注', '标签', '复盘']
+export const EXCEL_HEADER = ['日期', '类型', '分类', '金额（元）', '钱袋', '转入钱袋', '备注', '标签', '细算']
 export const EXCEL_WIDTHS = [12, 6, 12, 12, 12, 12, 30, 16, 8]
 
 export function excelRows(f: { transactions: T[]; categories: Named[]; wallets: Named[] }): Cell[][] {

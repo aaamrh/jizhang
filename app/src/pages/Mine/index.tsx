@@ -39,7 +39,7 @@ function Shortcut({ glyph, label, onPress }: { glyph: string; label: string; onP
 }
 
 export default function MinePage({ navigation }: TabProps<'Mine'>) {
-  const { reminderEnabled, reminderTime, setReminder, weeklyEnabled, setWeekly, lockEnabled, setLock, setElderMode } = useSettings()
+  const { reminderEnabled, reminderTime, setReminder, weeklyEnabled, setWeekly, reviewEnabled, setReviewReminder, lockEnabled, setLock, setElderMode } = useSettings()
   const streak = useStreak()
   const txnCount = useTxnCount()
   const achieved = useGoals().filter((g) => g.status === 'achieved')
@@ -63,6 +63,11 @@ export default function MinePage({ navigation }: TabProps<'Mine'>) {
   }
   const toggleWeekly = async (on: boolean) => {
     const ok = await setWeekly(on)
+    if (!ok) showAlert('没有通知权限', '请在系统设置里允许账房发送通知')
+    return ok
+  }
+  const toggleReview = async (on: boolean) => {
+    const ok = await setReviewReminder(on)
     if (!ok) showAlert('没有通知权限', '请在系统设置里允许账房发送通知')
     return ok
   }
@@ -133,6 +138,7 @@ export default function MinePage({ navigation }: TabProps<'Mine'>) {
         <ListRow glyph="oil-lamp" title="记账提醒" subtitle="每天定时提醒，当天记过就不提醒" switchValue={reminderEnabled} onSwitch={toggleReminder} />
         {reminderEnabled ? <DateField label="提醒时间" mode="time" value={reminderTime} onChange={(t) => setReminder(true, t)} /> : null}
         <ListRow glyph="scroll" title="每周日看看这周的账" subtitle="周日晚上 8 点提醒，点开是盘账里的这一周" switchValue={weeklyEnabled} onSwitch={toggleWeekly} />
+        <ListRow glyph="steelyard" title="每晚提醒细算" subtitle="这个月有还没细算的花销，晚上 8 点提醒一次；桌面图标上显示还有几笔" switchValue={reviewEnabled} onSwitch={toggleReview} />
         <ListRow glyph="lock" title="应用锁" subtitle="打开时需要指纹、面容或手机密码" switchValue={lockEnabled} onSwitch={toggleLock} />
       </Section>
 

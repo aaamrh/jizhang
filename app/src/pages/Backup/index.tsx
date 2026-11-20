@@ -35,7 +35,7 @@ export default function BackupPage() {
       </Section>
 
       <Section title={`导出 Excel（${VIP_NAME}）`}>
-        <Txt>把我的账本里的每一笔导成表格：日期、类型、分类、金额、钱袋、备注、复盘。用 Excel、WPS 打开，可以自己筛选、求和、做图。</Txt>
+        <Txt>把我的账本里的每一笔导成表格：日期、类型、分类、金额、钱袋、备注、细算。用 Excel、WPS 打开，可以自己筛选、求和、做图。</Txt>
         <Button title="导出 Excel" onPress={() => (isVip ? void exportExcel() : useUi.getState().showVipSheet('excel'))} />
       </Section>
 

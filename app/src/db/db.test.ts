@@ -174,16 +174,17 @@ describe('月度统计', () => {
 })
 
 describe('复盘候选', () => {
-  it('弹性+享受里最大的 8 笔中未标记的', () => {
+  it('弹性+享受里每一笔未标记的，新的在前（同一天大的在前）', () => {
     for (let i = 1; i <= 10; i++) expense(i % 2 ? '外出就餐' : '娱乐', i * 100)
     expense('住房', 999_999) // 必需，不参与
+    expense('外出就餐', 50, { date: '2026-11-12' }) // 更新的一天，排最前
     let list = reviewCandidates(db, L, '2026-11')
-    expect(list.map((x) => x.amountCents)).toEqual([1000, 900, 800, 700, 600, 500, 400, 300])
+    expect(list.map((x) => x.amountCents)).toEqual([50, 1000, 900, 800, 700, 600, 500, 400, 300, 200, 100])
     setReview(db, list[0]!.id, 'necessary')
     setReview(db, list[1]!.id, 'unnecessary')
     list = reviewCandidates(db, L, '2026-11')
-    expect(list).toHaveLength(6) // 标记过的不再出现，也不会补进第 9、10 笔
-    expect(list[0]!.amountCents).toBe(800)
+    expect(list).toHaveLength(9) // 标记过的不再出现
+    expect(list[0]!.amountCents).toBe(900)
   })
 
   it('标了 2 笔点“下次再说”：标过的仍能在“已复盘”里看到并修改，没标的下次还在', () => {

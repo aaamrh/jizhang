@@ -17,6 +17,7 @@ export type SettingKey =
   | 'familyView' // 首页在看的家庭账本 id；'' 看我的账本；旧版 '1'
   | 'reminderAsked' // 首次打开时问过“几点记账”
   | 'weeklyEnabled'
+  | 'reviewEnabled' // 每晚 8 点提醒看看花得值不值
   | 'elderMode'
   | 'syncConsent' // 同意把账目上传同步：'1' 同意，'0' 拒绝（只在本机记）
   | 'pendingOrder' // 已下单还没确认到账的订单 id，回到前台时再查一次

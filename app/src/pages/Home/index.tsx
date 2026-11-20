@@ -301,10 +301,10 @@ export default function HomePage({ navigation }: TabProps<'Home'>) {
           </ScrollView>
         ) : null}
 
-        {/* 快捷入口（复盘、心愿、周期都只针对我的账本，看家庭账本时不显示）；预算挪到了上面进度条那一行，周账并进了盘账的“周” */}
+        {/* 快捷入口（细算、心愿、定时都只针对我的账本，看家庭账本时不显示）；预算挪到了上面进度条那一行，周账并进了盘账的“周” */}
         {familyView ? null : (
         <View style={{ flexDirection: 'row' }}>
-          <Quick glyph="seal" label="复盘" badge={reviewCount} onPress={() => navigation.navigate('Review', { month })} />
+          <Quick glyph="seal" label="细算" badge={reviewCount} onPress={() => navigation.navigate('Review', { month })} />
           <Quick glyph="treasure-bowl" label="心愿" onPress={() => navigation.navigate('Achievements')} />
           <Quick glyph="cycle" label="定时" onPress={() => navigation.navigate('Recurrings')} />
           {lastYear ? <Quick glyph="thread-book" label="年账" onPress={() => navigation.navigate('YearReport', { year: lastYear })} /> : null}

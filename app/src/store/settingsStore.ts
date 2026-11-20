@@ -18,6 +18,8 @@ interface SettingsState {
   reminderTime: string // 'HH:MM'
   reminderAsked: boolean
   weeklyEnabled: boolean
+  /** 每晚 8 点：这个月还有没标的弹性、享受花销时提醒（默认开） */
+  reviewEnabled: boolean
   lockEnabled: boolean
   elderMode: boolean
   dismissedVersion: string | null
@@ -41,6 +43,7 @@ interface SettingsState {
   setReminder: (enabled: boolean, time?: string) => Promise<boolean>
   markReminderAsked: () => void
   setWeekly: (enabled: boolean) => Promise<boolean>
+  setReviewReminder: (enabled: boolean) => Promise<boolean>
   setLock: (enabled: boolean) => void
   /** 长辈模式的唯一开关；以后家庭账本管理员远程开启也调用这里 */
   setElderMode: (on: boolean) => void
@@ -68,6 +71,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
   reminderTime: '21:00',
   reminderAsked: false,
   weeklyEnabled: true,
+  reviewEnabled: true,
   lockEnabled: false,
   elderMode: false,
   dismissedVersion: null,
@@ -93,6 +97,7 @@ export const useSettings = create<SettingsState>((set, get) => ({
       // 老版本已经开过提醒的，不再问
       reminderAsked: s.reminderAsked === '1' || s.reminderEnabled === '1',
       weeklyEnabled: s.weeklyEnabled !== '0',
+      reviewEnabled: s.reviewEnabled !== '0',
       lockEnabled: s.lockEnabled === '1',
       elderMode: s.elderMode === '1',
       dismissedVersion: s.dismissedVersion ?? null,
@@ -138,6 +143,13 @@ export const useSettings = create<SettingsState>((set, get) => ({
     if (enabled && !(await askPermission())) return false
     setSetting(db, 'weeklyEnabled', enabled ? '1' : '0')
     set({ weeklyEnabled: enabled })
+    return true
+  },
+
+  setReviewReminder: async (enabled) => {
+    if (enabled && !(await askPermission())) return false
+    setSetting(db, 'reviewEnabled', enabled ? '1' : '0')
+    set({ reviewEnabled: enabled })
     return true
   },
 

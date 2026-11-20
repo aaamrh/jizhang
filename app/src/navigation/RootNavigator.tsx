@@ -94,7 +94,7 @@ export function RootNavigator() {
         )}
         <Stack.Screen name="ElderEntry" component={ElderEntryPage} options={{ title: '记一笔', presentation: 'modal' }} />
         <Stack.Screen name="EntryEdit" component={EntryEditPage} options={{ headerShown: false, presentation: 'modal' }} />
-        <Stack.Screen name="Review" component={ReviewPage} options={{ title: '复盘' }} />
+        <Stack.Screen name="Review" component={ReviewPage} options={{ title: '细算' }} />
         <Stack.Screen name="Templates" component={TemplatesPage} options={{ title: '常记' }} />
         <Stack.Screen name="TemplateForm" component={TemplateFormPage} options={{ title: '常记' }} />
         <Stack.Screen name="Recurrings" component={RecurringsPage} options={{ title: '定时记账' }} />

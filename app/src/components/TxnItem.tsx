@@ -60,7 +60,7 @@ export function TxnItem({
     t.type === 'transfer' ? (t.note.trim() ? `${t.walletName} → ${t.toWalletName ?? '已删除的钱袋'}` : '转账') : t.walletName,
     who,
     t.assetId ? '家当' : null,
-    review ? `复盘：${review}` : null,
+    review ? `细算：${review}` : null,
   ]
   return (
     <ListRow
