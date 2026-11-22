@@ -36,9 +36,18 @@ $keep = @(Get-Content $lp -ErrorAction SilentlyContinue | Where-Object { $_ -not
 Set-Content $lp ($keep + "cmake.dir=$cmakeDir") -Encoding ascii
 # 4) 省内存：Kotlin 在 Gradle 进程里编译（不另起 3 个各占 1.7G 的编译守护进程），限制并行数；构建完停掉守护进程
 $gp = "$dst\android\gradle.properties"
-$lean = @{ 'kotlin.compiler.execution.strategy' = 'in-process'; 'org.gradle.workers.max' = '2'; 'org.gradle.jvmargs' = '-Xmx3g -XX:MaxMetaspaceSize=768m' }
+$lean = @{ 'kotlin.compiler.execution.strategy' = 'in-process'; 'org.gradle.workers.max' = '2'; 'org.gradle.jvmargs' = '-Xmx3g -XX:MaxMetaspaceSize=768m'
+  # 网慢时大文件下到一半会读超时（Gradle 默认 30 秒），放宽
+  'systemProp.org.gradle.internal.http.socketTimeout' = '300000'; 'systemProp.org.gradle.internal.http.connectionTimeout' = '120000' }
 $keep = @(Get-Content $gp | Where-Object { $k = ($_ -split '=', 2)[0].Trim(); -not $lean.ContainsKey($k) })
 Set-Content $gp ($keep + ($lean.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" })) -Encoding ascii
+# 5) Maven 依赖先走阿里云镜像：react-android 一个 aar 就 170MB，从 repo.maven.apache.org 下载会读超时、构建失败
+$bg = "$dst\android\build.gradle"
+$g = Get-Content $bg -Raw
+if ($g -notmatch 'maven\.aliyun\.com') {
+  $mirror = "maven { url 'https://maven.aliyun.com/repository/google' }`n    maven { url 'https://maven.aliyun.com/repository/public' }`n    google()"
+  [IO.File]::WriteAllText($bg, ($g -replace 'google\(\)', $mirror), (New-Object Text.UTF8Encoding $false))
+}
 "PREBUILT $(Get-Date -Format 'HH:mm:ss')" | Out-File $log -Append -Encoding utf8
 Set-Location android
 & .\gradlew.bat assembleRelease --console=plain "-PreactNativeArchitectures=arm64-v8a" 2>&1 | Out-File $log -Append -Encoding utf8

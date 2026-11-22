@@ -36,3 +36,11 @@ export function centsToInput(cents: number): string {
   if (fen === 0) return String(yuan)
   return `${yuan}.${String(fen).padStart(2, '0').replace(/0$/, '')}`
 }
+
+/** 占比：part / total 的百分数。有但不到 1% 写“<1%”（四舍五入成“0%”像是没花）；total 为 0 时空串 */
+export function formatShare(part: number, total: number): string {
+  if (total <= 0) return ''
+  const p = (part / total) * 100
+  if (part > 0 && p < 1) return '<1%'
+  return `${Math.round(p)}%`
+}

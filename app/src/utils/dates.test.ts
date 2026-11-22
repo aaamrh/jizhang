@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { monthGrid, periodLabel, periodRange, shiftPeriod } from './dates'
+import { addDays, monthGrid, periodBlockText, periodLabel, periodRange, pickerGrid, shiftPeriod, weekLabel, weekStartOf } from './dates'
 
 describe('periodRange / shiftPeriod / periodLabel', () => {
   it('周一到下周一、整月、整年', () => {
@@ -15,6 +15,47 @@ describe('periodRange / shiftPeriod / periodLabel', () => {
   it('标题', () => {
     expect(periodLabel('week', '2026-11-19', '2026-11-17')).toBe('本周')
     expect(periodLabel('year', '2026-06-30')).toBe('2026年')
+  })
+})
+
+describe('选周：weekStartOf / weekLabel', () => {
+  it('点哪天都落到那周周一；周日、跨年也对', () => {
+    expect(weekStartOf('2026-11-16')).toBe('2026-11-16') // 周一
+    expect(weekStartOf('2026-11-19')).toBe('2026-11-16')
+    expect(weekStartOf('2026-11-22')).toBe('2026-11-16') // 周日
+    expect(weekStartOf('2027-01-01')).toBe('2026-12-28')
+  })
+  it('上周：本周周一往前 7 天；底下写的是周一到周日', () => {
+    expect(addDays(weekStartOf('2026-11-23'), -7)).toBe('2026-11-16')
+    expect(weekLabel('2026-11-16')).toBe('11月16日 – 11月22日')
+  })
+})
+
+describe('periodBlockText', () => {
+  it('月、年：小字年份 / 大字月份，全年 / 2026年', () => {
+    expect(periodBlockText('month', '2026-11-19')).toEqual({ small: '2026年', big: '11月' })
+    expect(periodBlockText('year', '2026-06-30')).toEqual({ small: '全年', big: '2026年' })
+  })
+  it('周：同月写几号到几号，本周加注；跨月、跨年写月.日', () => {
+    expect(periodBlockText('week', '2026-11-19', '2026-11-17')).toEqual({ small: '2026年11月 · 本周', big: '16–22日' })
+    expect(periodBlockText('week', '2026-11-19', '2026-11-30')).toEqual({ small: '2026年11月', big: '16–22日' })
+    expect(periodBlockText('week', '2026-10-28', '2026-11-30')).toEqual({ small: '2026年', big: '10.26–11.1' })
+    expect(periodBlockText('week', '2026-12-31', '2027-01-01')).toEqual({ small: '2026年 · 本周', big: '12.28–1.3' })
+  })
+})
+
+describe('pickerGrid', () => {
+  it('2026-11：1 号是周日，前面补 10 月 26–31 日，后面补到 12 月 6 日，正好 6 行', () => {
+    const g = pickerGrid('2026-11')
+    expect(g).toHaveLength(42)
+    expect(g.slice(0, 7).map((c) => c.date)).toEqual(['2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01'])
+    expect(g.slice(0, 6).every((c) => !c.inMonth)).toBe(true)
+    expect(g[6]!.inMonth).toBe(true)
+    expect(g.filter((c) => c.inMonth)).toHaveLength(30)
+    expect(g[41]).toEqual({ date: '2026-12-06', inMonth: false })
+  })
+  it('1 号是周一的月份：第一行就从 1 号开始', () => {
+    expect(pickerGrid('2026-06')[0]).toEqual({ date: '2026-06-01', inMonth: true })
   })
 })
 

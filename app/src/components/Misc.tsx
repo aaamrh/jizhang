@@ -1,12 +1,13 @@
 import type { LucideIcon } from 'lucide-react-native'
 import { useState, type ReactNode } from 'react'
 import { Pressable, View } from 'react-native'
-import { colors, size, space, type } from '../theme'
+import { colors, radius, size, space, type } from '../theme'
 import { DatePickerSheet } from './DatePicker'
 import { FeatureIcon, Icon } from './Icon'
 import { RetroGlyph } from './RetroGlyph'
-import { ChevronDown, ChevronLeft, ChevronRight } from './icons/ui'
+import { ChevronDown, ChevronLeft, ChevronRight, X } from './icons/ui'
 import { Txt, type TxtVariant } from './Txt'
+import { periodBlockText, type PeriodKind } from '../utils/dates'
 
 /** 空状态：远山淡墨作底、前面一件器物，留白 + 一句话 + 可选按钮 */
 export function EmptyState({ glyph, text, action }: { glyph?: string; text: string; action?: ReactNode }) {
@@ -125,16 +126,77 @@ export function YearMonthBlock({ month, onChange, aside }: { month: string; onCh
   )
 }
 
+/** 盘账左上角的时间段，和流水的 YearMonthBlock 一个样子（小字在上、大字在下）。点开选日子 / 月份 / 年份；读屏可以上下滑动切到上一段、下一段（代替原来的左右箭头） */
+export function PeriodBlock({
+  kind,
+  anchor,
+  onPick,
+  onShift,
+  nextDisabled,
+}: {
+  kind: PeriodKind
+  anchor: string
+  onPick: () => void
+  onShift: (n: 1 | -1) => void
+  nextDisabled?: boolean
+}) {
+  const { small, big } = periodBlockText(kind, anchor)
+  return (
+    <Pressable
+      accessibilityRole="adjustable"
+      accessibilityLabel={`${small.replace(' · ', '，')}，${big}，点按选择`}
+      accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+      onAccessibilityAction={(e) => {
+        if (e.nativeEvent.actionName === 'decrement') onShift(-1)
+        else if (!nextDisabled) onShift(1)
+      }}
+      hitSlop={space.xs}
+      onPress={onPick}
+      style={({ pressed }) => pressed && { opacity: 0.6 }}
+    >
+      <Txt v="small" muted numberOfLines={1}>
+        {small}
+      </Txt>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xxs }}>
+        <Txt v="title" numberOfLines={1}>
+          {big}
+        </Txt>
+        <Icon as={ChevronDown} size="inline" color={colors.ink2} />
+      </View>
+    </Pressable>
+  )
+}
+
 /**
  * 一组收支数字里的一项：小标签在上，楷体数值在下。
  * scale：同一组里按最长的数值统一缩小（十几万、上百万都放得下，三个数字号一致）
+ * onClear：标签换成一枚可以点掉的小胶囊（盘账筛了“非必要”时显示“非必要 ✕”，点了回到全部）；
+ * 胶囊比标签高，所以数值都贴着底边，三个数字仍在一条线上
  */
-export function MoneyStat({ label, value, color, scale = 1 }: { label: string; value: string; color?: string; scale?: number }) {
+export function MoneyStat({ label, value, color, scale = 1, onClear }: { label: string; value: string; color?: string; scale?: number; onClear?: () => void }) {
   return (
-    <View style={{ flex: 1, alignItems: 'flex-end', gap: space.xxs, minWidth: 0 }}>
-      <Txt v="caption" muted numberOfLines={1}>
-        {label}
-      </Txt>
+    <View style={{ flex: 1, alignItems: 'flex-end', justifyContent: 'flex-end', gap: space.xxs, minWidth: 0 }}>
+      {onClear ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`只看${label}，点按看全部`}
+          hitSlop={space.xs}
+          onPress={onClear}
+          style={({ pressed }) => [
+            { height: size.chipSm, flexDirection: 'row', alignItems: 'center', gap: 2, paddingLeft: space.xs, paddingRight: space.xxs, borderRadius: radius.pill, backgroundColor: colors.fill },
+            pressed && { opacity: 0.6 },
+          ]}
+        >
+          <Txt v="caption" numberOfLines={1}>
+            {label}
+          </Txt>
+          <Icon as={X} size="inline" color={colors.ink2} />
+        </Pressable>
+      ) : (
+        <Txt v="caption" muted numberOfLines={1}>
+          {label}
+        </Txt>
+      )}
       <Txt
         v="h2"
         serif

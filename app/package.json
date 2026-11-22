@@ -60,7 +60,8 @@
     "ios": "expo run:ios",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "lint": "expo lint"
   },
   "private": true
 }

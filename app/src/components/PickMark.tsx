@@ -27,12 +27,15 @@ function framePath(w: number, h: number) {
   ].join(' ')
 }
 
-/** 画在数字后面，铺满格子（w、h 是格子的大小）；月份、年份那种宽格子也能画 */
-export function PickMark({ w, h }: { w: number; h: number }) {
+/**
+ * 画在数字后面，铺满格子（w、h 是格子的大小）；月份、年份那种宽格子也能画。
+ * tilt：歪多少度。一个格子歪 3° 像随手一框；选一周时框的是一整行（三百多宽），歪 3° 两头差出十几像素，所以只歪一点
+ */
+export function PickMark({ w, h, tilt = -3 }: { w: number; h: number; tilt?: number }) {
   if (!w || !h) return null
   const d = framePath(w, h)
   return (
-    <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: w, height: h, transform: [{ rotate: '-3deg' }] }}>
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: w, height: h, transform: [{ rotate: `${tilt}deg` }] }}>
       <Svg width={w} height={h}>
         <Path d={d} stroke={colors.seal} strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
         {/* 印泥不匀：再压一道淡的，略错开 */}

@@ -73,6 +73,44 @@ export function rangeSummary(
   return { incomeCents, expenseCents, balanceCents: incomeCents - expenseCents, txnCount, necessity, categories: list, reviewed }
 }
 
+/**
+ * 一段日期 [start, end) 里每天的净支出（支出 − 退款），盘账的柱状图和“比上期同期”用。
+ * 口径和 rangeSummary 一样：只算有分类的账，excludeAssets 去掉买家当，filter 只算某一种必要性
+ */
+export function dailySpend(
+  db: DB,
+  ledgerId: string,
+  start: string,
+  end: string,
+  excludeAssets = false,
+  filter: Necessity | 'all' = 'all',
+): { date: string; cents: number }[] {
+  const rows = db
+    .select({ date: t.date, categoryId: t.categoryId, type: t.type, review: t.review, cents: sql<number>`sum(${t.amountCents})` })
+    .from(t)
+    .where(
+      and(
+        inLedger(t, ledgerId),
+        gte(t.date, start),
+        lt(t.date, end),
+        inArray(t.type, ['expense', 'refund']),
+        excludeAssets ? sql`not (${t.type} = 'expense' and ${t.assetId} is not null)` : undefined,
+      ),
+    )
+    .groupBy(t.date, t.categoryId, t.type, t.review)
+    .all()
+  const tiers =
+    filter === 'all' ? null : new Map(db.select({ id: categories.id, tier: categories.tier }).from(categories).where(eq(categories.ledgerId, ledgerId)).all().map((r) => [r.id, r.tier]))
+  const byDay = new Map<string, number>()
+  for (const r of rows) {
+    if (!r.categoryId) continue
+    if (tiers && necessityOf(legacyReview(r.review), (tiers.get(r.categoryId) ?? null) as Parameters<typeof necessityOf>[1]) !== filter) continue
+    const signed = (r.type === 'expense' ? 1 : -1) * Number(r.cents ?? 0)
+    byDay.set(r.date, (byDay.get(r.date) ?? 0) + signed)
+  }
+  return [...byDay.entries()].map(([date, cents]) => ({ date, cents }))
+}
+
 export function monthSummary(db: DB, ledgerId: string, month: string, excludeAssets = false, filter: Necessity | 'all' = 'all'): MonthSummary {
   const { start, end } = monthRange(month)
   return { month, ...rangeSummary(db, ledgerId, start, end, excludeAssets, filter) }

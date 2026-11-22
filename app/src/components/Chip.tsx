@@ -237,3 +237,40 @@ export function Segmented<T extends string>({
     </View>
   )
 }
+
+/**
+ * 字签：一排小字选项，没有底色、没有胶囊；选中的墨色加粗、下面一粒墨点，其余淡墨。
+ * 用在顶栏这种放不下分段控件、又不想再加一条灰底的地方（盘账右上角的 周 · 月 · 年）
+ */
+export function TextTabs<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[]
+  value: T
+  onChange: (v: T) => void
+}) {
+  return (
+    <View accessibilityRole="tablist" style={{ flexDirection: 'row', gap: space.sm }}>
+      {options.map((o) => {
+        const on = o.value === value
+        return (
+          <Pressable
+            key={o.value}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            hitSlop={{ top: space.xs, bottom: space.xs, left: space.xxs, right: space.xxs }}
+            onPress={() => onChange(o.value)}
+            style={({ pressed }) => [{ alignItems: 'center', gap: space.xxs / 2 }, pressed && { opacity: 0.6 }]}
+          >
+            <Txt v="body" color={on ? colors.active : colors.ink2} medium={on}>
+              {o.label}
+            </Txt>
+            <View style={{ width: space.xxs, height: space.xxs, borderRadius: radius.pill, backgroundColor: on ? colors.active : 'transparent' }} />
+          </Pressable>
+        )
+      })}
+    </View>
+  )
+}

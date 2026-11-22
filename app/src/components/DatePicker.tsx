@@ -3,7 +3,7 @@ import { Pressable, View } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, { runOnJS, SlideInLeft, SlideInRight, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated'
 import { colors, radius, size, space } from '../theme'
-import { addDays, monthGrid, monthLabel, shiftMonth, today } from '../utils/dates'
+import { addDays, monthLabel, pickerGrid, shiftMonth, today, weekLabel, weekStartOf } from '../utils/dates'
 import { Button } from './Button'
 import { Icon } from './Icon'
 import { ChevronDown, ChevronLeft, ChevronRight } from './icons/ui'
@@ -17,20 +17,21 @@ import { Txt } from './Txt'
  * 点标题逐级上翻（日 → 月 → 年），年份一页 12 个；‹ › 或左右滑动翻页。
  * 选日子：点了只是选中，按“确定”才定下、关面板（用户：别一按日期就关了）；底部“昨天”“今天”也只是选中。
  * 选月份、年份：点了就定（首页、盘账、年账跳转用）。
+ * 选一周（盘账的“周”）：还是日历，点哪天都框住它所在的那一整行（周一到周日），底下写清是哪几天，
+ * 按钮是“上周”“本周”；按“确定”返回那周的周一。原来是按日子选、只框一天，用户看不懂是在选周
  */
 type Level = 'day' | 'month' | 'year'
-export type PickKind = Level
+export type PickKind = Level | 'week'
 
 const WEEK = ['一', '二', '三', '四', '五', '六', '日']
 const YEARS_PER_PAGE = 12
 const SWIPE = 50 // 滑过这么远（或甩得够快）就翻页
-const GRID_CELLS = 42 // 每个月都按 6 行画（不够的补空格），左右滑换月时高度不跳
 
 /**
  * 选中的那天是朱文框（用户从五种里选的）。今天不写数字，直接写“今天”（月份、年份写“本月”“今年”）：
  * 原来是一粒墨点，用户说不明显，点成了昨天都看不出来
  */
-function Cell({ label, on, today: isToday, todayText, disabled, onPress, width }: { label: string; on?: boolean; today?: boolean; todayText: string; disabled?: boolean; onPress: () => void; width: `${number}%` }) {
+function Cell({ label, on, today: isToday, todayText, disabled, outside, onPress, width }: { label: string; on?: boolean; today?: boolean; todayText: string; disabled?: boolean; /** 前后月补上的日子：浅灰 */ outside?: boolean; onPress: () => void; width: `${number}%` }) {
   const [box, setBox] = useState({ w: 0, h: 0 })
   return (
     <View style={{ width, alignItems: 'center', paddingVertical: space.xxs }}>
@@ -59,7 +60,7 @@ function Cell({ label, on, today: isToday, todayText, disabled, onPress, width }
             {todayText}
           </Txt>
         ) : (
-          <Txt v="body" color={colors.ink} medium={on}>
+          <Txt v="body" color={outside ? colors.ink3 : colors.ink} medium={on}>
             {label}
           </Txt>
         )}
@@ -68,10 +69,22 @@ function Cell({ label, on, today: isToday, todayText, disabled, onPress, width }
   )
 }
 
+/** 选周时框住整行：铺满这一行，几乎不歪（一行很长，歪 3° 两头差太多） */
+function RowMark() {
+  const [box, setBox] = useState({ w: 0, h: 0 })
+  return (
+    <View pointerEvents="none" onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })} style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
+      <PickMark w={box.w} h={box.h} tilt={-0.6} />
+    </View>
+  )
+}
+
+const chunk = <T,>(xs: T[], n: number) => Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, i * n + n))
+
 interface Props {
   visible: boolean
   onClose: () => void
-  /** 选到哪一级就结束：day 返回 'YYYY-MM-DD'，month 返回 'YYYY-MM'，year 返回 'YYYY' */
+  /** 选到哪一级就结束：day 返回 'YYYY-MM-DD'，week 返回那周周一 'YYYY-MM-DD'，month 返回 'YYYY-MM'，year 返回 'YYYY' */
   kind: PickKind
   value: string
   onChange: (v: string) => void
@@ -83,7 +96,10 @@ interface Props {
 
 export function DatePickerSheet({ visible, onClose, kind, value, onChange, noFuture, header }: Props) {
   const now = today()
-  const [level, setLevel] = useState<Level>(kind)
+  const byWeek = kind === 'week'
+  // 选日子和选周都是先选中、按确定才定（draft）；日历这一级都是“日”
+  const byDraft = kind === 'day' || byWeek
+  const [level, setLevel] = useState<Level>(byWeek ? 'day' : kind)
   const [month, setMonth] = useState(value.slice(0, 7) || now.slice(0, 7)) // 正在看的月
   const [yearPage, setYearPage] = useState(Number(value.slice(0, 4)))
   const [draft, setDraft] = useState(value) // 选日子时：点了还没确定的那天
@@ -93,14 +109,15 @@ export function DatePickerSheet({ visible, onClose, kind, value, onChange, noFut
 
   useEffect(() => {
     if (!visible) return
-    setLevel(kind)
+    setLevel(kind === 'week' ? 'day' : kind)
     setMonth((kind === 'year' ? `${value}-01` : value).slice(0, 7))
     setYearPage(Number(value.slice(0, 4)))
     setDraft(value)
   }, [visible, kind, value])
 
   const year = Number(month.slice(0, 4))
-  const chosen = kind === 'day' ? draft : value
+  const chosen = byDraft ? draft : value
+  const draftWeek = weekStartOf(draft)
   const pick = (v: string) => {
     onChange(v)
     onClose()
@@ -183,24 +200,26 @@ export function DatePickerSheet({ visible, onClose, kind, value, onChange, noFut
                       </Txt>
                     ))}
                   </View>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                    {[...monthGrid(month), ...Array<null>(GRID_CELLS).fill(null)].slice(0, GRID_CELLS).map((d, i) =>
-                      d ? (
+                  {/* 固定 6 行，每个月都一样高（左右滑换月不跳）；前后月的日子也排上、画成浅灰，第一行不会空着。
+                      点灰色的日子：选日子时选中并翻到那个月；选周时框住那一周（不翻页） */}
+                  {chunk(pickerGrid(month), 7).map((row, r) => (
+                    <View key={r} style={{ flexDirection: 'row' }}>
+                      {byWeek && weekStartOf(row[0]!.date) === draftWeek ? <RowMark /> : null}
+                      {row.map(({ date: d, inMonth }) => (
                         <Cell
                           key={d}
                           todayText="今天"
                           width={`${100 / 7}%`}
                           label={String(Number(d.slice(8)))}
-                          on={d === chosen}
+                          outside={!inMonth}
+                          on={!byWeek && d === chosen}
                           today={d === now}
                           disabled={future(d)}
-                          onPress={() => (kind === 'day' ? setDraft(d) : pick(d))}
+                          onPress={() => (byWeek ? setDraft(d) : kind === 'day' ? (inMonth ? setDraft(d) : choose(d)) : pick(d))}
                         />
-                      ) : (
-                        <View key={`x${i}`} style={{ width: `${100 / 7}%`, height: size.circle + space.xxs * 2 }} />
-                      ),
-                    )}
-                  </View>
+                      ))}
+                    </View>
+                  ))}
                 </View>
               ) : level === 'month' ? (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
@@ -244,7 +263,19 @@ export function DatePickerSheet({ visible, onClose, kind, value, onChange, noFut
           </Animated.View>
         </GestureDetector>
 
-        {kind === 'day' ? (
+        {byWeek ? (
+          // 选周：底下写清选的是哪几天；上周、本周只是选中，确定才定下
+          <View style={{ gap: space.sm }}>
+            <Txt v="small" muted center>
+              {weekLabel(draftWeek)}
+            </Txt>
+            <View style={{ flexDirection: 'row', gap: space.sm }}>
+              <Button title="上周" size="md" style={{ flex: 1 }} onPress={() => choose(addDays(weekStartOf(now), -7))} />
+              <Button title="本周" size="md" style={{ flex: 1 }} onPress={() => choose(now)} />
+              <Button title="确定" size="md" variant="ink" style={{ flex: 1 }} onPress={() => pick(draftWeek)} />
+            </View>
+          </View>
+        ) : kind === 'day' ? (
           // 昨天、今天只是选中（不是红色主按钮，用户：今天不需要红色高亮）；确定才定下
           <View style={{ flexDirection: 'row', gap: space.sm }}>
             <Button title="昨天" size="md" style={{ flex: 1 }} disabled={future(addDays(now, -1))} onPress={() => choose(addDays(now, -1))} />

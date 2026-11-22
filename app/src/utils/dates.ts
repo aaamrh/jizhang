@@ -103,6 +103,34 @@ export function periodLabel(kind: PeriodKind, anchor: string, now = today()) {
   return `${start.slice(0, 4)}年`
 }
 
+/** 盘账左上角的时间段，分小字、大字两行（和流水左上角的“2026年 / 11月”一个样子）
+ *  月：2026年 / 11月；年：全年 / 2026年；周：2026年11月 · 本周 / 16–22日，跨月写 2026年 / 10.27–11.2 */
+export function periodBlockText(kind: PeriodKind, anchor: string, now = today()) {
+  const { start } = periodRange(kind, anchor)
+  const y = start.slice(0, 4)
+  const m = Number(start.slice(5, 7))
+  if (kind === 'year') return { small: '全年', big: `${y}年` }
+  if (kind === 'month') return { small: `${y}年`, big: `${m}月` }
+  const end = addDays(start, 6)
+  const m2 = Number(end.slice(5, 7))
+  const d1 = Number(start.slice(8, 10))
+  const d2 = Number(end.slice(8, 10))
+  const thisWeek = start === weekStartOf(now) ? ' · 本周' : ''
+  return m === m2 ? { small: `${y}年${m}月${thisWeek}`, big: `${d1}–${d2}日` } : { small: `${y}年${thisWeek}`, big: `${m}.${d1}–${m2}.${d2}` }
+}
+
+/**
+ * 选日子面板的格子：固定 6 行 42 天，从 1 号所在那周的周一排起；前后月的日子也排上（界面上画成灰色），
+ * 第一行不会是“空空空空空空 1”（用户要的），选周时跨月的那周也是完整的一行。inMonth：是不是这个月的
+ */
+export function pickerGrid(month: string): { date: string; inMonth: boolean }[] {
+  const start = weekStartOf(`${month}-01`)
+  return Array.from({ length: 42 }, (_, i) => {
+    const date = addDays(start, i)
+    return { date, inMonth: date.slice(0, 7) === month }
+  })
+}
+
 /** 月历格子：周一开头，按周排成 7 列；不属于本月的位置是 null */
 export function monthGrid(month: string): (string | null)[] {
   const first = `${month}-01`

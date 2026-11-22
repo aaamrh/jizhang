@@ -7,13 +7,12 @@ import { ProgressBar } from '../../components/Bars'
 import { Button } from '../../components/Button'
 import { attempt } from '../../components/dialogs'
 import { FeatureIcon, Icon } from '../../components/Icon'
-import { Calendar, ChevronDown, Search, X } from '../../components/icons/ui'
+import { Calendar, Search, X } from '../../components/icons/ui'
 import { RetroGlyph } from '../../components/RetroGlyph'
 import { ListRow } from '../../components/ListRow'
 import { Ornament } from '../../components/Ornament'
 import { EmptyState, MoneyStat, moneyScale, YearMonthBlock } from '../../components/Misc'
-import { LedgerCoverSlot } from '../../components/BookCover'
-import { Picker } from '../../components/Picker'
+import { LedgerSwitch } from '../../components/LedgerSwitch'
 import { Section } from '../../components/Section'
 import { Txt } from '../../components/Txt'
 import { TxnItem, TxnRow } from '../../components/TxnItem'
@@ -23,7 +22,6 @@ import { dayActions } from '../../hooks/actions'
 import { accountActions } from '../../hooks/account'
 import {
   useBudgetStatus,
-  useCurrentLedger,
   useSyncNudge,
   useGoals,
   useLastYearReportHint,
@@ -40,7 +38,6 @@ import { useAuth } from '../../store/authStore'
 import { useSettings } from '../../store/settingsStore'
 import { useUi } from '../../store/uiStore'
 import { amountColor, colors, expenseColor, GUTTER, iconSize, incomeColor, radius, size, space, tint } from '../../theme'
-import { LEDGER_TYPE_LABEL } from '../../types/domain'
 import type { TabProps } from '../../types/navigation'
 import { recordedBy, recordedSpend, whoLabel } from '../../utils/members'
 import { flameLevel } from '../../utils/streak'
@@ -90,9 +87,8 @@ function Quick({ glyph, label, badge, onPress }: { glyph: string; label: string;
 
 export default function HomePage({ navigation }: TabProps<'Home'>) {
   const { month, setMonth, excludeAssets, setFamilyView } = useSettings()
-  const ledger = useCurrentLedger() // 我的账本：本机数据、记账都用它
   // 家庭账本是一家人各自账的汇总，从服务器取；可以在好几个家庭里，首页切到哪个看哪个（记账照样记在我的账本）
-  const { families, viewed: family } = useFamilies()
+  const { viewed: family } = useFamilies()
   const familyView = !!family
   const mine = useMonthView(month, excludeAssets)
   const fam = useFamilyMonth(familyView ? family!.id : null, month)
@@ -130,34 +126,6 @@ export default function HomePage({ navigation }: TabProps<'Home'>) {
   const streakText = streak.todayCounted ? `连续记账 ${streak.streak} 天` : streak.streak > 0 ? `已连续 ${streak.streak} 天 · 今天还没记` : '今天记一笔，点起火苗'
   useStreakMoment(streak)
 
-  // 账本切换：页面顶部居中「账本名 ▾」，一眼能看出可以点（参照鲨鱼记账）；最后一项进账本管理
-  const MANAGE = '__manage'
-  const ledgerSwitch = (
-    <Picker
-      label="切换账本"
-      value={(familyView ? family : ledger)?.id ?? null}
-      options={[
-        ...[ledger, ...families].filter((l) => !!l).map((l) => ({ value: l.id, label: l.name, sub: LEDGER_TYPE_LABEL[l.type], leading: <LedgerCoverSlot ledger={l} /> })),
-        { value: MANAGE, label: '管理账本…', leading: <LedgerCoverSlot /> },
-      ]}
-      onChange={(v) => (v === MANAGE ? navigation.navigate('Ledgers') : setFamilyView(v === ledger?.id ? '' : v))}
-      trigger={(open) => (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`当前账本：${(familyView ? family : ledger)?.name ?? '账本'}，点按切换`}
-          hitSlop={space.xs}
-          onPress={open}
-          style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: space.xxs, maxWidth: '70%' }, pressed && { opacity: 0.6 }]}
-        >
-          <Txt v="h2" medium numberOfLines={1}>
-            {(familyView ? family : ledger)?.name ?? '我的账本'}
-          </Txt>
-          <Icon as={ChevronDown} size="inline" color={colors.ink} />
-        </Pressable>
-      )}
-    />
-  )
-
   // 在攒的心愿：进度最高的那个；没有就邀请立一个
   const active = goals.filter((g) => g.status === 'active').sort((a, b) => b.balanceCents / b.targetCents - a.balanceCents / a.targetCents)[0]
   const goalText = active
@@ -194,7 +162,7 @@ export default function HomePage({ navigation }: TabProps<'Home'>) {
       <View style={{ paddingHorizontal: GUTTER, paddingTop: space.xs, paddingBottom: space.xs, gap: space.xs }}>
         {/* 顶栏：居中账本名 ▾，右侧搜索 */}
         <View style={{ height: size.navBar - space.xs, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-          {ledgerSwitch}
+          <LedgerSwitch onManage={() => navigation.navigate('Ledgers')} />
           {/* 右上角：搜索、记账日历（大掌柜；不是的话弹开通提醒，停在“记账日历”） */}
           <View style={{ position: 'absolute', right: 0, flexDirection: 'row', gap: space.md }}>
             <Pressable accessibilityRole="button" accessibilityLabel="搜索" hitSlop={space.xs} onPress={() => navigation.navigate('Search')} style={({ pressed }) => pressed && { opacity: 0.6 }}>
@@ -216,8 +184,8 @@ export default function HomePage({ navigation }: TabProps<'Home'>) {
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: space.md }}>
           <YearMonthBlock month={month} onChange={setMonth} />
           <View style={{ flex: 1, flexDirection: 'row', gap: space.sm, paddingBottom: space.xxs }}>
-            <MoneyStat label={excludeAssets && !familyView ? '支出·不含家当' : '支出'} value={formatPlain(exp)} color={expenseColor} scale={scale} />
-            <MoneyStat label="收入" value={formatPlain(inc)} color={incomeColor} scale={scale} />
+            <MoneyStat label={excludeAssets && !familyView ? '支出·不含家当' : '支出'} value={formatPlain(exp)} color={amountColor(-summary.expenseCents)} scale={scale} />
+            <MoneyStat label="收入" value={formatPlain(inc)} color={amountColor(summary.incomeCents)} scale={scale} />
             <MoneyStat label="结余" value={formatSigned(bal)} color={amountColor(summary.balanceCents)} scale={scale} />
           </View>
         </View>

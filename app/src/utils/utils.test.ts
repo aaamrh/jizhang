@@ -3,7 +3,7 @@ import { DEFAULT_EXPENSE, DEFAULT_INCOME } from '../db/seed'
 import { assetCost, perDayAfter } from './assetCost'
 import { addDays, dayLabel, daysInclusive, monthRange, shiftMonth } from './dates'
 import { defaultIconFor, formatIcon, ICONS, isIconName, legacyIcon, parseIcon, suggestIcon } from './iconCatalog'
-import { centsToInput, formatPlain, formatSigned, formatYuan, parseYuan } from './money'
+import { centsToInput, formatPlain, formatShare, formatSigned, formatYuan, parseYuan } from './money'
 import { uuidv5 } from './uuidv5'
 
 describe('money', () => {
@@ -139,5 +139,14 @@ describe('uuidv5', () => {
     expect(uuidv5('expense.dining', ns)).toBe(uuidv5('expense.dining', ns))
     expect(uuidv5('expense.dining', ns)).not.toBe(uuidv5('expense.taxi', ns))
     expect(uuidv5('中文键', ns)).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+  })
+})
+
+describe('formatShare', () => {
+  it('不到 1% 写 <1%，0 写 0%，总数为 0 不写', () => {
+    expect(formatShare(139, 1350491)).toBe('<1%')
+    expect(formatShare(0, 100)).toBe('0%')
+    expect(formatShare(50, 100)).toBe('50%')
+    expect(formatShare(5, 0)).toBe('')
   })
 })

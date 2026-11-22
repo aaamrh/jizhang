@@ -6,7 +6,7 @@ import { getCategory, listCategories } from '../db/categoryRepo'
 import { hasNoSpend, recordedDays } from '../db/dayRepo'
 import { hasTxnsInYear, weekReport, yearReport } from '../db/reportRepo'
 import { listLedgers, listMembers, myMember, personalLedger } from '../db/ledgerRepo'
-import { monthSummary, rangeSummary } from '../db/statsRepo'
+import { dailySpend, monthSummary, rangeSummary } from '../db/statsRepo'
 import { necessityOf, type Necessity } from '../utils/necessity'
 import { countAllTxns, countTxns, getTxn, listEntries, listMonthTxns, listTagTxns, type EntriesQuery, reviewCandidates, reviewedList, searchTxns } from '../db/txnRepo'
 import { allTagTotals, recentTags, tagTotalsIn } from '../db/tagRepo'
@@ -201,6 +201,12 @@ export function usePeriodStats(kind: PeriodKind, anchor: string, excludeAssets: 
     const { start, end } = periodRange(kind, anchor)
     return rangeSummary(db, id, start, end, excludeAssets, filter)
   }, [id, kind, anchor, excludeAssets, filter])
+}
+
+/** 盘账柱状图、同期对比：[start, end) 每天的净支出 */
+export function useDailySpend(start: string, end: string, excludeAssets: boolean, filter: Necessity | 'all' = 'all') {
+  const id = useLedgerId()
+  return useLive(() => dailySpend(db, id, start, end, excludeAssets, filter), [id, start, end, excludeAssets, filter])
 }
 
 /** 选标签：最近用过的在前 */
